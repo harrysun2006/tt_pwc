@@ -1,0 +1,54 @@
+---
+server:
+  port: 8081
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 1
+
+spring:
+  servlet:
+    # These native Spring properties set the max upload size for multipart files
+    multipart:
+      max-file-size: 1000MB
+      max-request-size: 1000MB
+  application:
+    name: pwc-api
+  datasource:
+    # driverClassName: com.mysql.cj.jdbc.Driver
+    # url: jdbc:mysql://localhost:3306/app
+    driverClassName: org.postgresql.Driver
+    url: ${DB_URL:jdbc:postgresql://localhost:15432/app?connectTimeout=10&socketTimeout=15&ApplicationName=pwc}
+    username: ${DB_USERAME:app}
+    password: ${DB_PASSWORD:secret}
+    # Connection pool - https://github.com/brettwooldridge/HikariCP
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximumPoolSize: 25
+      # 60 seconds
+      connectionTimeout: 60000
+      poolName: pwc-api
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      write-dates-as-timestamps: false
+  flyway:
+    enabled: true
+  jooq:
+    sql-dialect: Postgres
+  jpa.open-in-view: false
+
+api:
+  rest-base-url: /api
+  version: 0.0.1
+  version-header: true
+
+logging:
+  # config: classpath:logback-spring.xml
+  file.name: api.log
+  level:
+    com.pwc: ${LOGGING_LEVEL_API:INFO}
+    org.springframework.security: ERROR
+    com.zaxxer.hikari: ${LOGGING_LEVEL_HIKARI:ERROR}
+    org.flywaydb.core: ${LOGGING_LEVEL_FLYWAY:ERROR}

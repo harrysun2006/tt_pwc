@@ -1,0 +1,84 @@
+println("[${project.name}] ====== Database project detected; enabling Flyway. ======")
+println("[${project.name}] Flyway version: ${project.ext.versions.flyway}")
+
+def databaseMigrationLocations = ["filesystem:${project.projectDir}/src/main/resources/db/migration", "classpath:db/migration"]
+
+// Flyway configuration: Runs DB change scripts.
+flyway {
+    url = "${project.ext.database.url}"
+    user = "${project.ext.database.user}"
+    password = "${project.ext.database.password}"
+    schemas = project.ext.database.schemas
+    defaultSchema = project.ext.database.defaultSchema
+    locations = databaseMigrationLocations
+}
+
+// Enable Flyway tasks.
+tasks.withType(AbstractFlywayTask) {
+    enabled = true
+}
+
+// -- [ Build java migration ]------------------------------------------------
+task compileJavaMigration(type: JavaCompile) {
+    // Build will be skipped if db/migration doesn't exist
+    source = sourceSets.main.java.srcDirs
+    include "db/migration/*.java"
+    classpath = sourceSets.main.compileClasspath
+    destinationDir = new File("${project.projectDir}/build/classes/java/main")
+    options.annotationProcessorGeneratedSourcesDirectory = new File("${project.projectDir}/build/generated")
+}
+
+// Flyway clean task on dev DB
+flywayClean {
+    url = "${project.ext.database.url}"
+    user = "${project.ext.database.user}"
+    password = "${project.ext.database.password}"
+    schemas = project.ext.database.schemas
+    // defaultSchema = project.ext.database.defaultSchema
+    locations = databaseMigrationLocations
+    println("[${project.name}] Flyway clean dev: ${url}")
+}
+
+// Flyway migrate task on dev DB
+flywayMigrate {
+    url = "${project.ext.database.url}"
+    user = "${project.ext.database.user}"
+    password = "${project.ext.database.password}"
+    schemas = project.ext.database.schemas
+    // defaultSchema = project.ext.database.defaultSchema
+    locations = databaseMigrationLocations
+    println("[${project.name}] Flyway migrate dev: ${url}")
+}
+
+// Flyway clean task on test DB
+task flywayCleanTest(type: FlywayCleanTask) {
+    url = "${project.ext.database.test_url}"
+    user = "${project.ext.database.test_user}"
+    password = "${project.ext.database.test_password}"
+    schemas = project.ext.database.schemas
+    // defaultSchema = project.ext.database.defaultSchema
+    locations = databaseMigrationLocations
+    println("[${project.name}] Flyway clean test: ${url}")
+}
+
+// Flyway migrate task on test DB
+task flywayMigrateTest(type: FlywayMigrateTask) {
+    url = "${project.ext.database.test_url}"
+    user = "${project.ext.database.test_user}"
+    password = "${project.ext.database.test_password}"
+    schemas = project.ext.database.schemas
+    // defaultSchema = project.ext.database.defaultSchema
+    locations = databaseMigrationLocations
+    println("[${project.name}] Flyway migrate test: ${url}")
+}
+
+compileJava.dependsOn(flywayMigrate).dependsOn(compileJavaMigration)
+
+// Migrate both dev and test dbs
+flywayMigrate.dependsOn(flywayMigrateTest)
+
+// Test on a clean test db
+test.dependsOn(flywayCleanTest).dependsOn(flywayMigrateTest)
+
+// Clean both dev and test dbs on clean
+clean.dependsOn(flywayClean).dependsOn(flywayCleanTest)

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <include resource="org/springframework/boot/logging/logback/file-appender.xml" />
+
+    <property name="LOG_PATH" value="${user.dir}/logs" />
+    <property name="LOG_FORMAT" value="%d{yyyy-MM-dd HH:mm:ss.SSS}[%-5level][%thread] - %logger{108} - %msg%n" />
+
+    <appender name="NOP" class="ch.qos.logback.core.helpers.NOPAppender">
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-4relative [%thread] %d{yyyy-MM-dd HH:mm:ss.SSS}[%-5level] - %logger{108} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/api.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/api.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>200MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>600MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_FORMAT}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="JOURNAL" class="org.gnieh.logback.SystemdJournalAppender">
+        <syslogIdentifier>api</syslogIdentifier>
+    </appender>
+
+    <appender name="JOURNAL2" class="org.gnieh.logback.SystemdJournalAppender">
+        <logLocation>false</logLocation>
+        <logException>false</logException>
+        <logThreadName>true</logThreadName>
+        <logLoggerName>true</logLoggerName>
+        <logMdc>true</logMdc>
+        <mdcKeyPrefix>MY_</mdcKeyPrefix>
+        <syslogIdentifier>api</syslogIdentifier>
+    </appender>
+
+    <appender name="JOURNAL-WITH-SOURCE" class="org.gnieh.logback.SystemdJournalAppender">
+        <logSourceLocation>true</logSourceLocation>
+        <logThreadName>true</logThreadName>
+        <logLoggerName>true</logLoggerName>
+        <logStackTrace>true</logStackTrace>
+        <syslogIdentifier>app</syslogIdentifier>
+        <encoder>
+            <pattern>[%t] %-5p %c{40}:%L - %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <springProfile name="!production">
+        <logger name="com.pwc" level="INFO" additivity="false">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="FILE" />
+        </logger>
+
+        <root level="WARN">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
+
+    <springProfile name="production">
+        <logger name="com.pwc" level="WARN" additivity="false">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="JOURNAL" />
+        </logger>
+
+        <root level="ERROR">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="JOURNAL" />
+        </root>
+    </springProfile>
+
+</configuration>

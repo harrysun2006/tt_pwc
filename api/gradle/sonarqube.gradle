@@ -1,0 +1,26 @@
+apply plugin: 'org.sonarqube'
+
+sonarqube {
+    properties {
+        // Define Sources and Test
+        property "sonar.sources", "src/main/java"
+        property "sonar.tests", "src/test/groovy"
+
+        // Set Exclusions
+        property "sonar.exclusions", [
+                "src/main/java/**/config/*.java",
+                "src/main/java/**/model/*.java",
+                "src/main/java/**/exception/*.java",
+                "src/main/java/**/constant/*.java",
+                "src/main/java/**/Application*.java",
+                "src/test/**"
+        ]
+
+        // Unit Test Coverage Results
+        property "sonar.groovy.jacoco.reportPath", "${rootDir}/reports/jacoco/${project.appName}.jacoco.ut.exec"
+        property "sonar.groovy.jacoco.reportMissing.force.zero", true
+
+        // Unit Test Pass/Fail Results
+        property "sonar.junit.reportsPath", "${rootDir}/reports/xml"
+    }
+}

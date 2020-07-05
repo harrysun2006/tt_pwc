@@ -1,0 +1,64 @@
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'net.ltgt.apt'
+
+println("[${project.name}] ====== Java project detected. ======")
+
+// Determine convention-based subproject and package names.
+project.ext.pascalCaseSubprojectName = project.name.replaceAll("(-)([A-Za-z0-9])", {s -> s.getAt(2).toUpperCase()}).capitalize()
+def packageName = "${packagePrefix}.${project.name}"
+// def jarName = "${baseProjectName}-${project.name}"
+def jarName = 'pwc-api'
+
+println("[${project.name}] Java source package name: ${packageName}")
+println("[${project.name}] output JAR name: ${jarName}")
+
+// Output JAR name
+jar {
+    // baseName = "${jarName}"
+    archivesBaseName = "${jarName}"
+}
+
+// Java version
+sourceCompatibility = versions.java
+targetCompatibility = versions.java
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java', 'src/test/groovy']
+        }
+        resources {
+            srcDirs = ['src/main/resources', 'src/test/resources']
+        }
+    }
+}
+
+// --[ Annotation processing ]------------------------------------------------------------------
+tasks.withType(JavaCompile) {
+    options.warnings = false
+    options.deprecation = false
+    options.compilerArgs += [
+            '-Amapstruct.suppressGeneratorTimestamp=true',
+            '-Amapstruct.suppressGeneratorVersionInfoComment=true',
+            '-Amapstruct.unmappedTargetPolicy=IGNORE',
+            '-Xlint:unchecked',
+            '-Xlint:deprecation'
+    ]
+    options.compilerArgs += ['-Xdoclint:none', '-Xlint:none', '-nowarn']
+    // options.compilerArgs += ['-Xlint:unchecked']
+    println("[${project.name}] Java compiler args: ${options.compilerArgs}")
+}
+
+clean.doFirst {
+    delete "${rootDir}/build/"
+    println "${rootDir}/build/ has been deleted"
+}

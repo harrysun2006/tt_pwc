@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+
+#  mysql:
+#    build: mysql
+#    image: pwc/mysql:alpine
+#    volumes:
+#      - pwc_mysql:/var/mysql/data
+#    ports:
+#      - 13306:3306
+#    env_file:
+#      - mysql/.env
+#    container_name: pwc_mysql
+
+  postgres:
+    build: postgres
+    image: pwc/postgres:alpine
+    volumes:
+      - pwc_postgres:/var/lib/postgresql/data
+    ports:
+      - 15432:5432
+    env_file:
+      - postgres/.env
+    container_name: pwc_postgres
+
+volumes:
+  pwc_mysql:
+  pwc_postgres:

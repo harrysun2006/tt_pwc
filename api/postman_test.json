@@ -1,0 +1,150 @@
+{
+	"info": {
+		"_postman_id": "254232a8-1fc7-48c8-b483-11d6a2847545",
+		"name": "08.pwc",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1.CreateBook1",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"name\": \"Book1\",\n   \"contacts\": [\n       {\"name\": \"Bob\", \"phone\": \"0423789001\"},\n       {\"name\": \"Mary\", \"phone\": \"0423789002\"},\n       {\"name\": \"Jane\", \"phone\": \"0423789003\"}\n   ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/address-books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"address-books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "1.CreateBook2",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"name\": \"Book2\",\n   \"contacts\": [\n       {\"name\": \"Mary\", \"phone\": \"0423789002\"},\n       {\"name\": \"John\", \"phone\": \"0423789004\"},\n       {\"name\": \"Jane\", \"phone\": \"0423789003\"}\n   ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/address-books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"address-books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2.GetBook1",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/address-books?name=Book1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"address-books"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "Book1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2.GetBook2",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/address-books?name=Book2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"address-books"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "Book2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3.GetDiff",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/address-books-diff?name1=Book1&name2=Book2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"address-books-diff"
+					],
+					"query": [
+						{
+							"key": "name1",
+							"value": "Book1"
+						},
+						{
+							"key": "name2",
+							"value": "Book2"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

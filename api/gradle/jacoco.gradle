@@ -1,0 +1,142 @@
+import org.gradle.internal.logging.text.StyledTextOutput
+import org.gradle.internal.logging.text.StyledTextOutputFactory
+import static org.gradle.internal.logging.text.StyledTextOutput.Style
+
+apply plugin: 'jacoco'
+
+test {
+    minHeapSize = "1g"
+    maxHeapSize = "2g"
+    failFast = false
+
+    // set JVM arguments for the test JVM(s)
+    jvmArgs 'org.gradle.jvmargs=-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8'
+
+    // Print coverage report
+    jacoco {
+        append = false
+        destinationFile = file("${rootDir}/reports/jacoco/${project.ext.baseProjectName}.jacoco.ut.exec")
+    }
+    doLast {
+        copy {
+            from "${buildDir}/test-results"
+            into "${rootDir}/reports/xml"
+        }
+    }
+    finalizedBy "jacocoTestReport"
+}
+
+ext {
+    // DO NOT LOWER THESE LIMITS WITHOUT CONSULTING WITH LEADS FIRST
+    limits = [
+            'instruction': 85,
+            'branch'     : 85,
+            'line'       : 85,
+            'complexity' : 85,
+            'method'     : 85,
+            'class'      : 85
+    ]
+    tolerance = 1
+}
+
+jacocoTestReport {
+    def ignoreFailures = true
+    group = 'Reporting'
+    description = 'Generate Jacoco coverage reports after running tests.'
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+
+    ext.reportCoverage1 = { metrics ->
+        def failures = []
+        def warnings = []
+
+        metrics.each {
+            def limit = limits[it.key]
+            if (it.value < limit) {
+                failures.add("- ${it.key} coverage rate is: ${it.value}%, minimum is ${limit}%")
+            }
+            // failures.add("- ${it.key} coverage rate is: ${it.value}%, minimum is ${limit}%")
+        }
+
+        if (failures) {
+            logger.quiet("------------------ Code Coverage Failed -----------------------")
+            failures.each {
+                logger.quiet(it)
+            }
+            logger.quiet("---------------------------------------------------------------")
+            if (!ignoreFailures) throw new GradleException("Code coverage failed")
+        } else if (warnings) {
+            logger.quiet("------------ Code Coverage Passed with Warnings ----------------")
+            warnings.each {
+                logger.quiet(it)
+            }
+            logger.quiet("---------------------------------------------------------------")
+        } else {
+            logger.quiet("Passed Code Coverage Checks")
+        }
+    }
+    ext.reportCoverage2 = { metrics ->
+        def out = services.get(StyledTextOutputFactory).create("jacoco")
+        logger.quiet("------------------ Code Coverage Summary -----------------------")
+        metrics.each {
+            def limit = limits[it.key]
+            out
+                    .style(Style.Info).text("- ${it.key} coverage rate is: ")
+                    .style(it.value < limit ? Style.Failure : Style.Normal).text("${it.value}%")
+                    .style(Style.Info).text(", minimum is ")
+                    .style(Style.Normal).text("${limit}%").println()
+        }
+        logger.quiet("------------------ Code Coverage Summary -----------------------")
+    }
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.enabled true
+    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: [
+                            'org/jooq/generated/**',
+                            'com/pwc/Constants.class',
+                            // exclude following classes/packages for now
+                            'com/pwc/config/**',
+                            'com/pwc/dto/**',
+                            'com/pwc/exception/**',
+                            'com/pwc/helper/**',
+                            'com/pwc/mapper/**',
+                            'com/pwc/repository/AbstractRepository.class',
+                            'com/pwc/util/**',
+                    ])
+        })
+    }
+    doLast {
+        def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
+        logger.lifecycle("Checking coverage results: ${report}")
+
+        def parser = new XmlParser()
+        parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+        def results = parser.parse(report)
+
+        def percentage = {
+            def covered = it.'@covered' as Double
+            def missed = it.'@missed' as Double
+            ((covered / (covered + missed)) * 100).round(2)
+        }
+
+        def counters = results.counter
+        def metrics = [:]
+        metrics << [
+                'instruction': percentage(counters.find { it.'@type'.equals('INSTRUCTION') }),
+                'branch'     : percentage(counters.find { it.'@type'.equals('BRANCH') }),
+                'line'       : percentage(counters.find { it.'@type'.equals('LINE') }),
+                'complexity' : percentage(counters.find { it.'@type'.equals('COMPLEXITY') }),
+                'method'     : percentage(counters.find { it.'@type'.equals('METHOD') }),
+                'class'      : percentage(counters.find { it.'@type'.equals('CLASS') })
+        ]
+        reportCoverage2(metrics)
+
+    }
+}
+
+check.dependsOn jacocoTestReport

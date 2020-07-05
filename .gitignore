@@ -1,0 +1,11 @@
+.idea
+.gradle
+*.log
+/**/bin
+/**/build
+/**/generated
+/**/reports
+/**/logs
+/**/out
+/**/node_modules
+/web

@@ -1,0 +1,87 @@
+// Apply DB-related plugins. See plugins{} section for details.
+apply plugin: 'nu.studer.jooq'
+
+// Declare DB-related dependencies.
+dependencies {
+    compile('org.jooq:jooq')
+    compile('org.jooq:jooq-meta')
+    compile('org.jooq:jooq-codegen')
+    jooqRuntime('org.postgresql:postgresql:42.2.14')
+}
+
+def jooqGenerateTaskName = "generate${pascalCaseSubprojectName}JooqSchemaSource"
+def jooqGeneratedSourceDir = "src/main/generated"
+
+println("[${project.name}] ====== Database project detected; enabling JOOQ. ======")
+println("[${project.name}] JOOQ version: ${versions.jooq}")
+println("[${project.name}] JOOQ codegen task name: ${jooqGenerateTaskName}")
+println("[${project.name}] using JDBC URL: ${project.ext.database.url}")
+println("[${project.name}] generating source to: ${project.projectDir}/${jooqGeneratedSourceDir}")
+
+// JOOQ configuration: Generates query DSL and POJOs from database schema.
+jooq {
+    version = versions.jooq
+
+    "${pascalCaseSubprojectName}"(sourceSets.main) {
+        jdbc {
+            driver = "${project.ext.database.driver}"
+            url = "${project.ext.database.url}"
+            user = "${project.ext.database.user}"
+            password = "${project.ext.database.password}"
+        }
+
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+
+            strategy {
+                name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+            }
+
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+                outputSchemaToDefault = false
+                outputCatalogToDefault = false
+                forcedTypes {
+                    forcedType {
+                        name = "varchar"
+                        expression = ".*"
+                        types = "JSONB?"
+                    }
+                    forcedType {
+                        name = "varchar"
+                        expression = ".*"
+                        types = "INET"
+                    }
+                }
+            }
+
+            generate {
+                relations              = true
+                deprecated             = false
+                records                = true
+                pojos                  = true
+                immutablePojos         = false
+                fluentSetters          = true
+                validationAnnotations  = true
+                daos                   = false
+                jpaAnnotations         = true
+                pojosEqualsAndHashCode = true
+            }
+
+            target {
+                directory = "${jooqGeneratedSourceDir}/java"
+            }
+        }
+    }
+}
+
+// Ensure generated files are removed upon clean.
+clean.doLast {
+    project.file(jooqGeneratedSourceDir).deleteDir()
+}
+
+// If any migrations have changed, run JOOQ codegen before compileJava.
+def jooqGenerateTask = tasks["${jooqGenerateTaskName}"]
+jooqGenerateTask.inputs.dir("src/main/resources/db/migration")
+compileJava.dependsOn(jooqGenerateTask)
