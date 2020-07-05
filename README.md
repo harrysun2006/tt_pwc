@@ -70,6 +70,8 @@ This solution is built based on Spring Boot.
 
 ## Build & Run
 ```bash
+git clone git@github.com:harrysun2006/tt_pwc.git
+cd tt_pwc
 docker-compose up --build -d
 ./gradlew clean build
 ./gradlew bootrun
